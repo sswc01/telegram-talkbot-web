@@ -6,6 +6,8 @@ go get github.com/go-telegram-bot-api/telegram-bot-api/v5
 go get github.com/mattn/go-sqlite3
 go mod tidy
 
+mkdir uploads
+
 echo "创建数据库文件..."
 touch messages.db
 echo "编译项目..."
