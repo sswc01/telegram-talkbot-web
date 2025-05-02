@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram 客服系统</title>
+    <style>
+        body {
+            display: flex;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            height: 100vh;
+        }
+        #customers {
+            width: 25%;
+            background: #f4f4f4;
+            overflow-y: auto;
+            border-right: 1px solid #ccc;
+        }
+        #customers h3 {
+            margin: 10px;
+        }
+        .customer {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #ddd;
+        }
+        .customer:hover, .active {
+            background-color: #e0e0e0;
+        }
+        #chat {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        #chat-header {
+            padding: 15px;
+            border-bottom: 1px solid #ccc;
+            background: #f9f9f9;
+        }
+        #messages {
+            flex-grow: 1;
+            padding: 10px;
+            overflow-y: auto;
+            background: #fff;
+        }
+        .message {
+            margin: 5px 0;
+        }
+        .message.user {
+            text-align: left;
+            color: #333;
+        }
+        .message.admin {
+            text-align: right;
+            color: #007bff;
+        }
+        #input-area {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ccc;
+            background: #f9f9f9;
+        }
+        textarea {
+            flex: 1;
+            padding: 10px;
+            resize: none;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            margin-left: 10px;
+            padding: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- 左侧客户列表 -->
+    <div id="customers">
+        <h3>客户列表</h3>
+        <div id="customer-list"></div>
+    </div>
+
+    <!-- 右侧聊天区域 -->
+    <div id="chat">
+        <div id="chat-header"><h3>请选择客户</h3></div>
+        <div id="messages"></div>
+        <div id="input-area">
+            <textarea id="messageInput" placeholder="输入消息..." rows="2"></textarea>
+            <button onclick="sendMessage()">发送</button>
+            <label for="fileInput" style="cursor: pointer;">
+                📎 上传文件
+                <input type="file" id="fileInput" onchange="uploadFile()" />
+            </label>
+        </div>
+    </div>
+
+<script>
+    let currentUserID = null;
+
+    // 加载客户列表
+    function loadCustomers() {
+        fetch('/customers')
+            .then(res => res.json())
+            .then(data => {
+                const customerList = document.getElementById('customer-list');
+                customerList.innerHTML = '';
+                data.forEach(user => {
+                    const div = document.createElement('div');
+                    div.className = 'customer';
+                    div.textContent = user; // 显示完整格式
+                    if (currentUserID && user.includes(currentUserID)) {
+                        div.classList.add('active');
+                    }
+                    div.onclick = () => loadChat(user.split('-').pop().trim());
+                    customerList.appendChild(div);
+                });
+            });
+    }
+
+    // 加载聊天记录
+    function loadChat(userID) {
+        currentUserID = userID;
+        document.getElementById('chat-header').innerHTML = `<h3>客户 ${userID}</h3>`;
+        fetch(`/history?user_id=${userID}`)
+            .then(res => res.json())
+            .then(data => {
+                const messageDiv = document.getElementById('messages');
+                messageDiv.innerHTML = '';
+                data.forEach(msg => {
+                    const div = document.createElement('div');
+                    div.className = `message ${msg.sender.includes('admin') ? 'admin' : 'user'}`;
+                    if (msg.content.includes("点击下载")) {
+                        div.innerHTML = `${msg.sender}: ${msg.content}`;
+                    } else {
+                        div.textContent = `${msg.sender}: ${msg.content}`;
+                    }
+                    messageDiv.appendChild(div);
+                });
+                messageDiv.scrollTop = messageDiv.scrollHeight; // 滚动到底部
+            });
+    }
+
+    // 发送消息
+    function sendMessage() {
+        const content = document.getElementById('messageInput').value.trim();
+        if (!content || !currentUserID) return;
+
+        fetch('/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `user_id=${currentUserID}&content=${content}`
+        }).then(() => {
+            document.getElementById('messageInput').value = '';
+            loadChat(currentUserID);
+        });
+    }
+
+    // 上传文件
+    function uploadFile() {
+        const fileInput = document.getElementById('fileInput');
+        if (!fileInput.files.length || !currentUserID) return;
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('user_id', currentUserID);
+
+        fetch('/upload', { method: 'POST', body: formData })
+            .then(() => {
+                alert('文件上传成功！');
+                loadChat(currentUserID);
+            })
+            .catch(() => alert('文件上传失败，请重试！'));
+    }
+
+    // Shift+Enter 换行，Enter 发送消息
+    document.getElementById('messageInput').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            if (!e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+    });
+
+    // 每秒自动刷新客户列表和当前聊天记录
+    setInterval(() => {
+        loadCustomers();
+        if (currentUserID) loadChat(currentUserID);
+    }, 1000);
+
+    loadCustomers();
+</script>
+</body>
+</html>

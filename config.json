@@ -1,0 +1,6 @@
+{
+  "bot_token": "bot tokan",
+  "start_message": "你好！请发送您的问题，客服会尽快回复您。",
+  "http_user": "admin",
+  "http_password": "123456"
+}
