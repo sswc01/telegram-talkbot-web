@@ -6,7 +6,7 @@
 
 作者 https://t.me/sswc01
 
-博客部署教程 http://mcf0311.sswc.lol/T1746189556
+博客部署教程 https://www.sswc.lol/T1746189556
 
 
 ## 功能特点
