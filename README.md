@@ -1,9 +1,13 @@
 # 双向Bot
 
 一个基于 **Telegram** 的双向通信 Bot，支持简单静态页面展示，快速部署，轻量稳定。
+
 频道 https://t.me/sswcnet
+
 作者 https://t.me/sswc01
+
 博客部署教程 http://mcf0311.sswc.lol/T1746189556
+
 
 ## 功能特点
 
